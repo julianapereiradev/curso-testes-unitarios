@@ -5,6 +5,10 @@ import * as orderRepository from "../../src/order-repository";
 import { OrderInput } from "../../src/validator";
 import httpStatus from "http-status";
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 describe("Order Service Tests", () => {
   it("should create an order", async () => {
 
@@ -13,42 +17,54 @@ describe("Order Service Tests", () => {
       description: faker.lorem.lines()
     }
 
-   const order = await createOrder(orderClient)
-   
-    expect(order).toEqual({
-      protocol: expect.any(String),
+  const protocol = "fake-protocol"
+
+  const mock = jest.spyOn(orderRepository, "create")
+  mock.mockResolvedValueOnce({
+      protocol,
       status: "IN_PREPARATION"
-    })
+  })
+
+  const order = await createOrder(orderClient)
+  expect(orderRepository.create).toBeCalledTimes(1)
+  expect(order).toEqual({
+    protocol,
+    status: "IN_PREPARATION"
+  })
+
   });
 
   it("should return an order based on the protocol", async () => {
-    
-    const resultOrderClient = {
-      protocol: new Date().getTime().toString(),
-      status: "IN_PREPARATION"
-    }
-
-    jest.spyOn(orderRepository, "getByProtocol").mockImplementationOnce((): any => {
+    const protocol = "fake-protocol";
+    const mock = jest.spyOn(orderRepository, "getByProtocol");
+    mock.mockImplementationOnce((): any => {
       return {
-        protocol: resultOrderClient.protocol,
-        status: resultOrderClient.status
+        protocol,
+        status: "IN_PREPARATION"
       }
-    })
+    });
 
-   const order = await getOrderByProtocol(resultOrderClient.protocol)
-  
-   expect(order.protocol).toBe(resultOrderClient.protocol)
-
+    const order = await getOrderByProtocol(protocol);
+    expect(orderRepository.getByProtocol).toBeCalledTimes(1);
+    expect(order).toEqual({
+      protocol,
+      status: "IN_PREPARATION"
+    });
   });
 
   it("should return status INVALID when protocol doesn't exists", async () => {
+    const mock = jest.spyOn(orderRepository, "getByProtocol");
+    mock.mockImplementationOnce((): any => {
+      return undefined;
+    });
 
-    jest.spyOn(orderRepository, "getByProtocol").mockImplementationOnce((): any => {
-      return undefined
-    })
-
-   const order = await getOrderByProtocol('0')
-  
-   expect(order.status).toEqual("INVALID")
+    const protocol = "does_not_exists_protocol";
+    const order = await getOrderByProtocol(protocol);
+    expect(orderRepository.getByProtocol).toBeCalledTimes(1);
+    expect(order).toEqual({
+      protocol,
+      status: "INVALID"
+    });
   });
+
 });
