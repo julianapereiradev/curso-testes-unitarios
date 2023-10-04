@@ -22,12 +22,33 @@ describe("Order Service Tests", () => {
   });
 
   it("should return an order based on the protocol", async () => {
-    // TODO
-    expect(true).toBe(true);
+    
+    const resultOrderClient = {
+      protocol: new Date().getTime().toString(),
+      status: "IN_PREPARATION"
+    }
+
+    jest.spyOn(orderRepository, "getByProtocol").mockImplementationOnce((): any => {
+      return {
+        protocol: resultOrderClient.protocol,
+        status: resultOrderClient.status
+      }
+    })
+
+   const order = await getOrderByProtocol(resultOrderClient.protocol)
+  
+   expect(order.protocol).toBe(resultOrderClient.protocol)
+
   });
 
   it("should return status INVALID when protocol doesn't exists", async () => {
-    // TODO
-    expect(true).toBe(true);
+
+    jest.spyOn(orderRepository, "getByProtocol").mockImplementationOnce((): any => {
+      return undefined
+    })
+
+   const order = await getOrderByProtocol('0')
+  
+   expect(order.status).toEqual("INVALID")
   });
 });
